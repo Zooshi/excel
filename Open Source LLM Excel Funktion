@@ -1,0 +1,43 @@
+Function CallLLMAPI(prompt As String) As String
+    Dim http As Object
+    Dim url As String
+    Dim body As String
+    Dim response As String
+    Dim startPos As Long
+    Dim endPos As Long
+    Dim responseContent As String
+    
+    ' Create the HTTP request object
+    Set http = CreateObject("MSXML2.XMLHTTP")
+    
+    ' API URL
+    url = "http://localhost:11434/api/generate"
+    
+    ' Request body (as JSON)
+    body = "{""model"": ""llama3.2:latest"", ""prompt"": """ & prompt & """, ""stream"": false}"
+    
+    ' Open HTTP request (POST)
+    http.Open "POST", url, False
+    http.setRequestHeader "Content-Type", "application/json"
+    
+    ' Send the request with the JSON body
+    http.send body
+    
+    ' Get the response text
+    response = http.responseText
+    
+    ' Find the start and end positions for the "response" field content
+    startPos = InStr(response, """response"":") + Len("""response"":") + 1 ' Find the start of the "response" field
+    endPos = InStr(startPos, response, """done""") - 2 ' Find the position before the "done" field
+    
+    ' Extract the value inside the "response" field
+    responseContent = Mid(response, startPos, endPos - startPos)
+    
+    ' Replace escaped characters like \n with actual newlines, and handle backslashes
+    responseContent = Replace(responseContent, "\n", vbCrLf)
+    responseContent = Replace(responseContent, "\\", "\")
+    
+    ' Return the value of the "response" field
+    CallLLMAPI = responseContent
+End Function
+
