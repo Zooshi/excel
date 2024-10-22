@@ -1,0 +1,37 @@
+let
+    CallLLMAPI = (prompt as text) =>
+    let
+        // API URL
+        url = "http://localhost:11434/api/generate",
+        
+        // Create request body as JSON
+        requestBody = "{""model"": ""llama3.2:latest"", ""prompt"": """ & 
+                     Text.Replace(prompt, """", "\""") & 
+                     """, ""stream"": false}",
+        
+        // Make the API call
+        Source = Web.Contents(
+            url,
+            [
+                Headers = [
+                    #"Content-Type" = "application/json"
+                ],
+                Content = Text.ToBinary(requestBody),
+                ManualStatusHandling = {200..299}
+            ]
+        ),
+        
+        // Convert response to text and parse JSON
+        ResponseBinary = Binary.Buffer(Source),
+        ResponseText = Text.FromBinary(ResponseBinary, TextEncoding.Utf8),
+        ParsedJson = Json.Document(ResponseText),
+        
+        // Extract just the "response" field
+        Response = ParsedJson[response],
+        
+        // Clean up any extra whitespace
+        CleanResponse = Text.Trim(Response)
+    in
+        CleanResponse
+in
+    CallLLMAPI
